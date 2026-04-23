@@ -19,16 +19,24 @@
       "filter": ["**/*"]
     }
   ],
-  "publish": {
-    "provider": "github"
-  },
+  "publish": null,
   "nsis": {
     "allowElevation": true,
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Blue Folder",
+    "runAfterFinish": true,
+    "installerIcon": "assets/appIcon.ico",
+    "uninstallerIcon": "assets/appIcon.ico",
+    "installerHeaderIcon": "assets/appIcon.ico"
   },
   "win": {
-    "target": "nsis",
+    "target": [
+      { "target": "nsis", "arch": ["x64"] },
+      { "target": "dir", "arch": ["x64"] }
+    ],
     "icon": "assets/appIcon.ico"
   },
   "mac": {

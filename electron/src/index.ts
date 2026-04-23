@@ -12,8 +12,6 @@ import { PORT, spawnServer, stopServer, pollReady } from './server';
 // Graceful handling of unhandled errors.
 unhandled();
 
-// Define our menu templates (these are optional)
-const trayMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [new MenuItem({ label: 'Quit App', role: 'quit' })];
 const appMenuBarMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [
   { role: process.platform === 'darwin' ? 'appMenu' : 'fileMenu' },
   { role: 'viewMenu' },
@@ -23,8 +21,24 @@ const appMenuBarMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [
 const capacitorFileConfig: CapacitorElectronConfig = getCapacitorElectronConfig();
 
 // Initialize our app. You can pass menu templates into the app here.
-// const myCapacitorApp = new ElectronCapacitorApp(capacitorFileConfig);
-const myCapacitorApp = new ElectronCapacitorApp(capacitorFileConfig, trayMenuTemplate, appMenuBarMenuTemplate);
+const myCapacitorApp = new ElectronCapacitorApp(capacitorFileConfig, [], appMenuBarMenuTemplate);
+
+// Tray menu built after init so it can reference the window.
+const trayMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [
+  new MenuItem({
+    label: 'Show Blue Folder',
+    click: () => {
+      const win = myCapacitorApp.getMainWindow();
+      if (win && !win.isDestroyed()) {
+        win.show();
+        win.focus();
+      }
+    },
+  }),
+  { type: 'separator' },
+  new MenuItem({ label: 'Quit', role: 'quit' }),
+];
+myCapacitorApp.setTrayMenu(trayMenuTemplate);
 
 // If deeplinking is enabled then we will set it up here.
 if (capacitorFileConfig.electron?.deepLinkingEnabled) {
@@ -67,18 +81,18 @@ if (electronIsDev) {
   }
 })();
 
-// Handle when all of our windows are close (platforms have their own expectations).
+// When the last window is closed, minimize to tray instead of quitting.
 app.on('window-all-closed', function () {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
+  if (process.platform === 'darwin') {
     app.quit();
   }
+  // On Windows/Linux the tray keeps the app alive — do nothing here.
 });
 
 // Gracefully stop the embedded server before quitting.
 app.on('before-quit', async (event) => {
   event.preventDefault();
+  (app as any).isQuiting = true;
   await stopServer();
   app.exit(0);
 });

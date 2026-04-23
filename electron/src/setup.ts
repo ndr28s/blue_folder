@@ -88,6 +88,13 @@ export class ElectronCapacitorApp {
     this.serverUrl = url;
   }
 
+  setTrayMenu(template: (MenuItem | MenuItemConstructorOptions)[]): void {
+    this.TrayMenuTemplate = template;
+    if (this.TrayIcon) {
+      this.TrayIcon.setContextMenu(Menu.buildFromTemplate(template));
+    }
+  }
+
   // Helper function to load in the app.
   private async loadMainWindow(thisRef: any) {
     if (thisRef.serverUrl) {
@@ -137,7 +144,17 @@ export class ElectronCapacitorApp {
       this.MainWindow.setBackgroundColor(this.CapacitorFileConfig.electron.backgroundColor);
     }
 
-    // If we close the main window with the splashscreen enabled we need to destory the ref.
+    // When tray is enabled, close button hides to tray instead of quitting.
+    if (this.CapacitorFileConfig.electron?.trayIconAndMenuEnabled) {
+      this.MainWindow.on('close', (event) => {
+        if (!(app as any).isQuiting) {
+          event.preventDefault();
+          this.MainWindow.hide();
+        }
+      });
+    }
+
+    // Destroy the splashscreen ref when main window is fully closed.
     this.MainWindow.on('closed', () => {
       if (this.SplashScreen?.getSplashWindow() && !this.SplashScreen.getSplashWindow().isDestroyed()) {
         this.SplashScreen.getSplashWindow().close();
