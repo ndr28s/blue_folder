@@ -5,4 +5,4 @@ dist/
 .env
 .env.*
 !.env.example
-electron/
+# electron/ tracked — Phase 1 work lives there
